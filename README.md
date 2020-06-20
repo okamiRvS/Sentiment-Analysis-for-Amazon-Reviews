@@ -1,18 +1,18 @@
-## Sentiment Analysis for Amazon-Reviews
+# Sentiment Analysis for Amazon-Reviews
 * Umberto Cocca - 807191
 
-# Introduzione
+## Introduzione
 Negli ulitmi anni si è visto un numero crescente di ricerche che hanno ampliato la comprensione del sentiment delle risorse testuali determinando l’avvento di servizi online che hanno cambiato il volto allo shopping.
 
 Applicazioni di commercio online come Amazon concepiscono una quantità spropositata di dati per mezzo delle transizioni e degli utenti di questo servizio, infatti una parte consistente è data dai contenuti generati dagli utenti che valutano i prodotti acquistati e
 condividono la loro esperienza procedendo con valutazioni numeriche, seguite spesso da delle recensioni.
 
-# Sentiment Analysis
+## Sentiment Analysis
 Il Sentiment Analysis serve per interpretare il linguaggio naturale e identificare informazioni soggettive che denotano opinioni, emozioni e sentimenti, determinndo la polarità corrispondente (positiva, negativa o neutra) e comprendere il soggetto / oggetto target.
 In questa fase, viene analizzata sistematicamente le parti testuali delle recensioni per estrarne un’opinione. Una parte preliminare pre-processing servirà per preparare il dataset. Vengono scartate recensioni troppo lunghe o troppe corte.
 Infine, viene utilizzato ASUM (Aspet Sentiment Unification Model) per poter estrarre quelle che sono un insieme di topic che sono riferiti ai sentiment positivi e negativi. Usando ASUM si assume che il documento sia composto da frasi.
 
-# Software utilizzati
+## Software utilizzati
 Il flusso di lavoro si compone di due aree, una fase di manipolazione dei dati attraverso Python e una fase di processione dei dati attraverso il modello ASUM per il sentiment analysis.
 
 *Python*\
