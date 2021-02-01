@@ -3,6 +3,7 @@
 *.log
 *.toc
 *.pkl
+*.rtf
 
 # test file
 test.py
