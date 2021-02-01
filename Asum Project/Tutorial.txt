@@ -1,0 +1,36 @@
+Per eseguire ASUM:
+1) Importa il progetto in eclipse
+2) Andare su RUN CONFIGURATIONS
+3) Andare su arguments e in program arguments inserire una roba come questa:
+-s 2 -t 10 -i 1000 -th 2 -a 0.1 -b 0.001/0.1/0 -g 1/1 -d C:\Users\Umberto\Desktop\input2 -o C:\Users\Umberto\Desktop\output2
+
+Example
+	-s 2 -t 30 -i 1000 -th 3 -a 0.1 -b 0.001/0.1/0 -g 1/1 -d /home/user/input -o /home/user/output
+
+Options
+-s
+	Number of sentiments
+-t
+	Number of topics(aspects) per sentiment
+-i
+	Number of sampling iterations
+-th
+	Number of threads to use
+	Note that this multi-thread version is a simple approximation (see Newman et al., Distributed Inference for Latent Dirichlet Allocation), and has no theoretical guarantee of yielding a correct result, though it works pretty well in practice.
+-a
+	Symmetric alpha value
+-b
+	Beta values
+	Three numbers should be specified, separated by slash(/). The first number is the value for non-seed words. All non-seed words have the same beta value for all sentiments. The second number is the value for seed words in the corresponding sentiment. The third number is the value for seed words in the other sentiments.
+	For example, suppose we use two sentiments, one for positive and the other for negative, and two sentiment seed files. For the positive sentiment, we want to set beta to 0.1 for positive seed words, 0 for negative seed words, and 0.001 for the other words. Then, this option has the value of 0.001/0.1/0. Then, the beta is automatically set for the negative sentiment accordingly.
+-g
+	Gamma
+	The elements of gamma are separated by slash(/). The number of specified numbers should be the same as the number of sentiments. For example, if there are two sentiments and we have no prior knowledge of sentiment distribution, we may set 1/1.
+-d
+	Directory path under which all input files are located
+-o
+	Directory path under which output files will be written
+	If this option is not set, the output directory is assumed to be the same as the input directory.
+-dic
+	Directory path under which seed word files are located
+	If this option is not set, the seed files are assumed to be located in the input directory.
