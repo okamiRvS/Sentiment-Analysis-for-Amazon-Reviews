@@ -3,7 +3,7 @@
 *.log
 *.toc
 *.pkl
-*.txt
+test.py
 
 
 # Latexmk
