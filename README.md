@@ -13,7 +13,7 @@ Sentiment Analysis is used to interpret natural language and identify subjective
 because companies want their brand to be positively perceived. In this regard, the focus can be on positive or negative comments, as well as customers’ feedbacks, to evaluate both strenghts and point on which to improve. In order to apply Sentiment Analysis in this project, first the textual parts of the reviews are systematically analyzed to extract an opinion. A preliminary pre-processing phase will prepare the dataset and finally, ASUM (Aspect Sentiment Unification Model) is used to extract set of topics that refer to positive and negative sentiments from a document
 made of sentences.
 
-## Software utilizzati
+## Existing Software and Tools used
 For the preprocessing and network analysis I used Python, due to the large amount of open source tools and libraries available. In particular, the following libraries were used:
 
 *Python*\
