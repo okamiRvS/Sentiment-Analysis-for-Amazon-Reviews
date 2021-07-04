@@ -1,8 +1,10 @@
+*.pkl
+*.graphml
+
 # LaTeX temporary files
 *.aux
 *.log
 *.toc
-*.pkl
 *.rtf
 
 # test file

@@ -4,6 +4,7 @@ import pdb
 import re
 import string
 from afinn import Afinn
+import igraph
 import numpy as np
 import pandas as pd
 from collections import Counter
@@ -36,6 +37,8 @@ import csv
 
 import treetaggerwrapper 
 from pprint import pprint
+
+from pathlib import Path
 
 # Function to get the counter
 def get_counter(df):
@@ -204,30 +207,35 @@ def regexCheck(item):
 	return a or d
 
 def reviews():
+
 	# List Unique Values In A pandas Column
 	# data.category.unique()
 
 	# How to select rows from a DataFrame based on column values
 	# data.loc[data["category"] == "pc"]
 
+	my_file = Path("cached_data_PRODUCTS.pkl")
+	if not my_file.is_file():
+		with open('products.json', 'r', encoding='utf8') as f:
+			data_PRODUCTS = pd.DataFrame(json.loads(line) for line in f)
+		data_PRODUCTS.set_index('_id', inplace=True)
 
-	with open('products.json', 'r', encoding='utf8') as f:
-		data_PRODUCTS = pd.DataFrame(json.loads(line) for line in f)
-	data_PRODUCTS.set_index('_id', inplace=True)
+		# Store your DataFrame
+		data_PRODUCTS.to_pickle('cached_data_PRODUCTS.pkl') # will be stored in current directory
 
-	data_PRODUCTS.to_pickle('cached_data_PRODUCTS.pkl')
+	my_file = Path("cached_dataframe.pkl")
+	if not my_file.is_file():
+		with open('reviews.json', 'r', encoding='utf8') as f:
+			data_REVIEWS = pd.DataFrame(json.loads(line) for line in f)
+		data_REVIEWS.set_index('product', inplace=True)
 
-	with open('reviews.json', 'r', encoding='utf8') as f:
-		data_REVIEWS = pd.DataFrame(json.loads(line) for line in f)
-	data_REVIEWS.set_index('product', inplace=True)
-
-	data_BOOKS = data_PRODUCTS.loc[data_PRODUCTS["category"] == "books" ]
-	data_join_BOOKS = data_REVIEWS.join(data_BOOKS,  how='inner', lsuffix='_left', rsuffix='_right')
-	data_join_BOOKS["index1"] = data_join_BOOKS.index
-	data = data_join_BOOKS
-	
-	# Store your DataFrame
-	data.to_pickle('cached_dataframe.pkl') # will be stored in current directory
+		data_BOOKS = data_PRODUCTS.loc[data_PRODUCTS["category"] == "books" ]
+		data_join_BOOKS = data_REVIEWS.join(data_BOOKS,  how='inner', lsuffix='_left', rsuffix='_right')
+		data_join_BOOKS["index1"] = data_join_BOOKS.index
+		data = data_join_BOOKS
+		
+		# Store your DataFrame
+		data.to_pickle('cached_dataframe.pkl') # will be stored in current directory
 
 
 	# Tree-tagger installation. When you're installing tree-tagger, you have 3 big steps :
@@ -257,73 +265,82 @@ def reviews():
 	data_PRODUCTS = pd.read_pickle('cached_data_PRODUCTS.pkl')
 
 	# dataframe to graph
-
 	import igraph as ig
-
+	print(igraph.__version__)
 	qwerty = data.drop_duplicates("index1") # 906 unique books
 	
-	# G.vs[0]["name"]
-	# G.neighbors(0)
-
 	G = ig.Graph(directed=True)
-	for node in data_PRODUCTS.index:
-		G.add_vertices([node])
+	
+	my_file = Path("GraphOutput.graphml")
+	if not my_file.is_file():
+		# G.vs[0]["name"]
+		# G.neighbors(0)
+		# G.es[0] to see attributes related to the first edge
 
-	labels = []
-	weight = []
-	for node in data_PRODUCTS.index:
-		bought_together_nodes = data_PRODUCTS.loc[node]["bought_together"]
-		also_bought_nodes = data_PRODUCTS.loc[node]["also_bought"]
-		also_viewed_nodes = data_PRODUCTS.loc[node]["also_viewed"]
-		for bought_node in bought_together_nodes:
-			w = 0.5
-			flag_A = False
-			flag_B = False
+		pdb.set_trace()
+		G.add_vertices(data_PRODUCTS.index) # add id
+		G.vs["title"] = data_PRODUCTS.title # add title as attribute of vertex
+		G.vs["category"] = data_PRODUCTS.category # add title as attribute of vertex
+
+		labels = []
+		weight = []
+		for node in data_PRODUCTS.index:
+			bought_together_nodes = data_PRODUCTS.loc[node]["bought_together"]
+			also_bought_nodes = data_PRODUCTS.loc[node]["also_bought"]
+			also_viewed_nodes = data_PRODUCTS.loc[node]["also_viewed"]
+			for bought_node in bought_together_nodes:
+				w = 0.5
+				flag_A = False
+				flag_B = False
+				for also_bought in also_bought_nodes:
+					if bought_node == also_bought :
+						w = w + 0.3
+						flag_A = True
+				for viewed_nodes in also_viewed_nodes:
+					if bought_node == viewed_nodes :
+						w = w + 0.2
+						flag_B = True
+				try:
+					G.add_edges([(node, bought_node)])
+					weight.append(w)
+					labels.append(str(w))
+					if flag_A : 
+						also_bought_nodes.remove(bought_node)
+					if flag_B :
+						also_viewed_nodes.remove(bought_node)
+				except Exception as e:
+					print("bought_node: " + str(e))
+
 			for also_bought in also_bought_nodes:
-				if bought_node == also_bought :
-					w = w + 0.3
-					flag_A = True
+				w = 0.3
+				flag_A = False
+				for viewed_nodes in also_viewed_nodes:
+					if also_bought == viewed_nodes :
+						w = w + 0.2
+						flag_A = True
+				try:
+					G.add_edges([(node, also_bought)])
+					weight.append(w)
+					labels.append(str(w))
+					if flag_A :
+						also_viewed_nodes.remove(also_bought)
+				except Exception as e:
+					print("also_bought: " + str(e))
+
 			for viewed_nodes in also_viewed_nodes:
-				if bought_node == viewed_nodes :
-					w = w + 0.2
-					flag_B = True
-			try:
-				G.add_edges([(node, bought_node)])
-				weight.append(w)
-				labels.append(str(w))
-				if flag_A : 
-					also_bought_nodes.remove(bought_node)
-				if flag_B :
-					also_viewed_nodes.remove(bought_node)
-			except Exception as e:
-				print("bought_node: " + str(e))
+				try:
+					G.add_edges([(node, viewed_nodes)])
+					weight.append(0.2)
+					labels.append("0.2")
+				except Exception as e:
+					print("viewed_nodes: " + str(e))
 
-		for also_bought in also_bought_nodes:
-			w = 0.3
-			flag_A = False
-			for viewed_nodes in also_viewed_nodes:
-				if also_bought == viewed_nodes :
-					w = w + 0.2
-					flag_A = True
-			try:
-				G.add_edges([(node, also_bought)])
-				weight.append(w)
-				labels.append(str(w))
-				if flag_A :
-					also_viewed_nodes.remove(also_bought)
-			except Exception as e:
-				print("also_bought: " + str(e))
+		G.es["weight"] = labels
+		G.es["label"] = labels
 
-		for viewed_nodes in also_viewed_nodes:
-			try:
-				G.add_edges([(node, viewed_nodes)])
-				weight.append(0.2)
-				labels.append("0.2")
-			except Exception as e:
-				print("viewed_nodes: " + str(e))
-
-	G.es["weight"] = labels
-	G.es["label"] = labels
+		G.write("GraphOutput.graphml", format="graphml")
+	else:
+		G = G.Read("GraphOutput.graphml", format="graphml")
 
 	# INDEGREE
 	# this is a way to quantify the importance, but
@@ -332,6 +349,8 @@ def reviews():
 	# Z is more popular than W
 	# https://www.coursera.org/lecture/networks-illustrated/in-degree-IlnXY
 	indegree_list = G.indegree()
+	G.vs["indegree"] = indegree_list
+
 	n_argmax = np.argsort(indegree_list)
 	n_argmax_reverse = n_argmax[::-1]
 	max_indegree = indegree_list[n_argmax_reverse[0]]
@@ -347,10 +366,14 @@ def reviews():
 				print(data_PRODUCTS.loc[id_product].title + " " + id_product)
 				count += 1
 				continue
-	
+
 	# PAGERANK
 	print("\n \n PAGERANKKK")
-	pagerank_list = G.pagerank()
+	pagerank_list = G.pagerank(weights=G.es["weight"]) #### take this and normalize
+	arnp = np.array(pagerank_list)
+	arnp_norm = arnp / min(arnp)
+	G.vs["pagerank"] = arnp_norm
+
 	n_argmax = np.argsort(pagerank_list)
 	n_argmax_reverse = n_argmax[::-1]
 
@@ -365,8 +388,11 @@ def reviews():
 				count += 1
 				continue
 
-	# statistics of the graph
+	my_file = Path("GraphOutputFinal.graphml")
+	if not my_file.is_file():
+		G.write("GraphOutputFinal.graphml", format="graphml")
 
+	# statistics of the graph
 	print("Nodes: " + str(len(G.vs)))
 	print("Edges: " + str(len(G.es)))
 	print("Directed: " + "True")
@@ -410,8 +436,19 @@ def reviews():
 	data = data.loc[(data.index1 == "8854172383") & (data.verified == True)]
 	data["body"] =  data["title_left"] + ". " + data["body"] # join title review with body review
 	bars = ["bad \n rating <= 3", "good \n rating > 3"]
-	pos_rating_review = len([d.get("$numberInt") for d in data.rating if int(d.get("$numberInt")) > 3])
-	neg_rating_review = len([d.get("$numberInt") for d in data.rating if int(d.get("$numberInt")) <= 3])
+	pos_review = [d[1].body for d in data.iterrows() if int(d[1].rating.get("$numberInt")) > 3]
+	pos_rating_review = len(pos_review)
+	neg_review = [d[1].body for d in data.iterrows() if int(d[1].rating.get("$numberInt")) <= 3]
+	neg_rating_review = len(neg_review)
+
+	with open("positive_reviews.txt", 'w', encoding="utf-8") as file_handler:
+		for item in pos_review:
+			file_handler.write("{}\n\n".format(str(item)))
+	
+	with open("negative_reviews.txt", 'w', encoding="utf-8") as file_handler:
+		for item in neg_review:
+			file_handler.write("{}\n\n".format(str(item)))
+
 	value_bars = [neg_rating_review, pos_rating_review]
 	plt.bar(x=bars, height=value_bars, color=(.4, .5, .6), zorder=3)
 	plt.grid(zorder=0)
